@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Target Rush</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #f9ca24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .stats div {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .game-area {
+            height: 500px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .start-screen, .game-over-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0,0,0,0.8);
+            padding: 40px;
+            border-radius: 15px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .start-screen h2, .game-over-screen h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #4ecdc4;
+        }
+
+        .start-screen p, .game-over-screen p {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .start-btn, .restart-btn {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            color: white;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+
+        .start-btn:hover, .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .target {
+            position: absolute;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            transition: transform 0.1s;
+            border: 3px solid rgba(255,255,255,0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .target:hover {
+            transform: scale(1.1);
+        }
+
+        .target.clicked {
+            animation: explode 0.3s ease-out forwards;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.7; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .score-popup {
+            position: absolute;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.5em;
+            pointer-events: none;
+            animation: scoreFloat 1s ease-out forwards;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        @keyframes scoreFloat {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+
+        .instructions {
+            text-align: center;
+            margin-top: 20px;
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .instructions p {
+            margin: 5px 0;
+            font-size: 1em;
+        }
+
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .game-area {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>Target Rush</h1>
+            <div class="stats">
+                <div class="score">Score: <span id="score">0</span></div>
+                <div class="time">Time: <span id="time">30</span>s</div>
+                <div class="level">Level: <span id="level">1</span></div>
+            </div>
+        </div>
+        
+        <div class="game-area" id="gameArea">
+            <div class="start-screen" id="startScreen">
+                <h2>Welcome to Target Rush!</h2>
+                <p>Click the targets as fast as you can!</p>
+                <p>Each level gets faster and more challenging.</p>
+                <button class="start-btn" id="startBtn">Start Game</button>
+            </div>
+            
+            <div class="game-over-screen" id="gameOverScreen" style="display: none;">
+                <h2>Game Over!</h2>
+                <p>Final Score: <span id="finalScore">0</span></p>
+                <p>Level Reached: <span id="finalLevel">1</span></p>
+                <button class="restart-btn" id="restartBtn">Play Again</button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <p>💡 Click the colorful targets to score points!</p>
+            <p>🎯 Faster clicks = Higher score multiplier!</p>
+            <p>⚡ Each level increases speed and difficulty!</p>
+        </div>
+    </div>
+    
+    <script>
+        class TargetRushGame {
+            constructor() {
+                this.score = 0;
+                this.level = 1;
+                this.timeLeft = 30;
+                this.gameRunning = false;
+                this.targetCount = 0;
+                this.gameTimer = null;
+                this.spawnTimer = null;
+                
+                this.gameArea = document.getElementById('gameArea');
+                this.scoreElement = document.getElementById('score');
+                this.timeElement = document.getElementById('time');
+                this.levelElement = document.getElementById('level');
+                this.startScreen = document.getElementById('startScreen');
+                this.gameOverScreen = document.getElementById('gameOverScreen');
+                this.startBtn = document.getElementById('startBtn');
+                this.restartBtn = document.getElementById('restartBtn');
+                
+                this.colors = [
+                    'linear-gradient(45deg, #ff6b6b, #ff8e8e)',
+                    'linear-gradient(45deg, #4ecdc4, #7fdbda)',
+                    'linear-gradient(45deg, #45b7d1, #73c7e6)',
+                    'linear-gradient(45deg, #f9ca24, #fdd85d)',
+                    'linear-gradient(45deg, #6c5ce7, #8b7ed8)',
+                    'linear-gradient(45deg, #fd79a8, #fdcb6e)'
+                ];
+                
+                this.bindEvents();
+            }
+            
+            bindEvents() {
+                this.startBtn.addEventListener('click', () => this.startGame());
+                this.restartBtn.addEventListener('click', () => this.restartGame());
+            }
+            
+            startGame() {
+                this.gameRunning = true;
+                this.score = 0;
+                this.level = 1;
+                this.timeLeft = 30;
+                this.targetCount = 0;
+                
+                this.startScreen.style.display = 'none';
+                this.gameOverScreen.style.display = 'none';
+                
+                this.updateDisplay();
+                this.startGameLoop();
+                this.spawnTargets();
+            }
+            
+            restartGame() {
+                this.clearTimers();
+                this.clearTargets();
+                this.startGame();
+            }
+            
+            startGameLoop() {
+                this.gameTimer = setInterval(() => {
+                    this.timeLeft--;
+                    this.updateDisplay();
+                    
+                    if (this.timeLeft <= 0) {
+                        this.endGame();
+                    }
+                    
+                    if (this.timeLeft % 10 === 0 && this.timeLeft < 30) {
+                        this.levelUp();
+                    }
+                }, 1000);
+            }
+            
+            spawnTargets() {
+                if (!this.gameRunning) return;
+                
+                const spawnDelay = Math.max(800 - (this.level * 100), 200);
+                
+                this.spawnTimer = setTimeout(() => {
+                    this.createTarget();
+                    this.spawnTargets();
+                }, spawnDelay + Math.random() * 500);
+            }
+            
+            createTarget() {
+                const target = document.createElement('div');
+                target.className = 'target';
+                
+                const size = 60 + Math.random() * 40;
+                const x = Math.random() * (this.gameArea.clientWidth - size);
+                const y = Math.random() * (this.gameArea.clientHeight - size);
+                
+                target.style.width = size + 'px';
+                target.style.height = size + 'px';
+                target.style.left = x + 'px';
+                target.style.top = y + 'px';
+                target.style.background = this.colors[Math.floor(Math.random() * this.colors.length)];
+                
+                const points = (10 + this.level * 5);
+                target.textContent = '+' + points;
+                
+                target.addEventListener('click', (e) => this.hitTarget(e, target, points));
+                
+                this.gameArea.appendChild(target);
+                this.targetCount++;
+                
+                setTimeout(() => {
+                    if (target.parentNode) {
+                        target.remove();
+                        this.targetCount--;
+                    }
+                }, 3000 - (this.level * 200));
+            }
+            
+            hitTarget(event, target, points) {
+                event.stopPropagation();
+                
+                const finalPoints = points * this.level;
+                this.score += finalPoints;
+                
+                this.showScorePopup(event.clientX, event.clientY, finalPoints);
+                
+                target.classList.add('clicked');
+                target.style.pointerEvents = 'none';
+                
+                setTimeout(() => {
+                    if (target.parentNode) {
+                        target.remove();
+                        this.targetCount--;
+                    }
+                }, 300);
+                
+                this.updateDisplay();
+            }
+            
+            showScorePopup(x, y, points) {
+                const popup = document.createElement('div');
+                popup.className = 'score-popup';
+                popup.textContent = '+' + points;
+                popup.style.left = (x - this.gameArea.offsetLeft) + 'px';
+                popup.style.top = (y - this.gameArea.offsetTop) + 'px';
+                
+                this.gameArea.appendChild(popup);
+                
+                setTimeout(() => {
+                    if (popup.parentNode) {
+                        popup.remove();
+                    }
+                }, 1000);
+            }
+            
+            levelUp() {
+                this.level++;
+                this.timeLeft += 5;
+                
+                const levelUpPopup = document.createElement('div');
+                levelUpPopup.className = 'score-popup';
+                levelUpPopup.textContent = 'LEVEL ' + this.level + '!';
+                levelUpPopup.style.left = '50%';
+                levelUpPopup.style.top = '50%';
+                levelUpPopup.style.transform = 'translate(-50%, -50%)';
+                levelUpPopup.style.fontSize = '2em';
+                levelUpPopup.style.color = '#f9ca24';
+                
+                this.gameArea.appendChild(levelUpPopup);
+                
+                setTimeout(() => {
+                    if (levelUpPopup.parentNode) {
+                        levelUpPopup.remove();
+                    }
+                }, 2000);
+                
+                this.updateDisplay();
+            }
+            
+            updateDisplay() {
+                this.scoreElement.textContent = this.score;
+                this.timeElement.textContent = this.timeLeft;
+                this.levelElement.textContent = this.level;
+            }
+            
+            endGame() {
+                this.gameRunning = false;
+                this.clearTimers();
+                this.clearTargets();
+                
+                document.getElementById('finalScore').textContent = this.score;
+                document.getElementById('finalLevel').textContent = this.level;
+                this.gameOverScreen.style.display = 'block';
+            }
+            
+            clearTimers() {
+                if (this.gameTimer) {
+                    clearInterval(this.gameTimer);
+                    this.gameTimer = null;
+                }
+                if (this.spawnTimer) {
+                    clearTimeout(this.spawnTimer);
+                    this.spawnTimer = null;
+                }
+            }
+            
+            clearTargets() {
+                const targets = this.gameArea.querySelectorSelector('.target');
+                targets.forEach(target => target.remove());
+                this.targetCount = 0;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new TargetRushGame();
+        });
+    </script>
+</body>
+</html>
